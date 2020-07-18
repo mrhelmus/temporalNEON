@@ -14,6 +14,7 @@ library(stringr)
 library(dplyr)
 library(lubridate)
 library(here)
+#devtools::load_all()
 ```
 
 ```{r, include = FALSE}
@@ -41,15 +42,22 @@ my_site_list <- c('ARIK','BARC','BLWA','CARI','COMO','CRAM','CUPE','GUIL','HOPB'
 ```
 
 ### Download Data
-```{r download, cache=TRUE}
+The below code used to download the raw macroinverts files is not run during the package build. Rerun this code to update the data. The data are stored in `data/macroinverts_raw.rda`. 
+```{r download, eval=FALSE}
 #download NEON data using API
 inv_allTabs <- loadByProduct(dpID = my_dpid, 
                              site = my_site_list,
                              package = "expanded", 
                              nCores = 4, # likely not needed
                              check.size = FALSE)
+#---
+# Uncomment to save a new version of the data
 
+#macroinverts_raw <- inv_allTabs
+#library(devtools)
+#use_data(macroinverts_raw, overwrite = TRUE)
 
+#---
 ```
 
 ```{r sandbox DELETE, eval=FALSE}
