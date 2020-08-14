@@ -1,6 +1,7 @@
 ---
 title: "Tidy NEON Macroinvertebrates Data"
 output: rmarkdown::html_vignette
+author: Mariana Perez Rocha (with cosmetic edits by M.R. Helmus)
 vignette: >
   %\VignetteIndexEntry{Tidy NEON Macroinvertebrates Data}
   %\VignetteEngine{knitr::rmarkdown}
@@ -9,12 +10,14 @@ vignette: >
 
 ```{r setup, include=FALSE}
 #library(temporalNEON)
+library(devtools)
 library(neonUtilities) 
 library(stringr)
 library(dplyr)
 library(lubridate)
 library(here)
-#devtools::load_all()
+library(forcats)
+devtools::load_all()
 ```
 
 ```{r, include = FALSE}
@@ -24,6 +27,8 @@ knitr::opts_chunk$set(
 )
 ```
 
+## Get Data
+First we download and derive the data and then later tidy and explore the data.
 
 ### Macroinverts Data Product ID
 ```{r DPID}
@@ -33,6 +38,7 @@ my_dpid <- 'DP1.20120.001'
 ### Choose sites
 All sites had to have > 2 years of sampling data as of 2019.
 
+
 ```{r site choice}
 
 my_site_list <- c('ARIK','BARC','BLWA','CARI','COMO','CRAM','CUPE','GUIL','HOPB',
@@ -41,26 +47,30 @@ my_site_list <- c('ARIK','BARC','BLWA','CARI','COMO','CRAM','CUPE','GUIL','HOPB'
 
 ```
 
+#### Note
+This is how the reproducibility gets wonky. "used data from, `r length(my_site_list)` site."
+
 ### Download Data
-The below code used to download the raw macroinverts files is not run during the package build. Rerun this code to update the data. The data are stored in `data/macroinverts_raw.rda`. 
+The below code used to download the raw macroinverts files is not run during the package build. Don't ever eval it. 
+
+Rerun this code to update the data.
+
+The manuscript data are stored in \`data/macroinverts_raw.rda` and as a `csv` in  \`data-raw/submitted/`.
+
 ```{r download, eval=FALSE}
 #download NEON data using API
-inv_allTabs <- loadByProduct(dpID = my_dpid, 
-                             site = my_site_list,
-                             package = "expanded", 
-                             nCores = 4, # likely not needed
-                             check.size = FALSE)
-#---
-# Uncomment to save a new version of the data
 
-#macroinverts_raw <- inv_allTabs
-#library(devtools)
-#use_data(macroinverts_raw, overwrite = TRUE)
+# uncomment
+#inv_allTabs <- loadByProduct(dpID = my_dpid, 
+#                             site = my_site_list,
+#                             package = "expanded", 
+#                             nCores = 4, # likely not needed
+#                             check.size = FALSE)
 
-#---
 ```
 
-### Explore taxonomy
+### Add taxonomy
+Add to the downloaded list of data a table of taxonomy to clean up the data.
 ```{r taxon table, eval = FALSE}
 
 # make ordered taxon_rank_list for a reference (subspecies is smallest rank, kingdom is largest)
@@ -98,23 +108,44 @@ taxon_rank_list_ordered <- c('kingdom',
                              'speciesGroup',
                              'species',
                              'subspecies') %>% rev()
+```
 
-# get taxon table from API, may take a few minutes to load
-full_taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
+#### Note
+This code is nor really used but could be useful. It gets a taxon table from the API.
+
+
+```{r taxonomy downloadeval=FALSE}
+full _taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
+```
+### Save Data
+
+0r
+
+
+```{r save data}
 #---
 # Uncomment to save a new version of the data
 
+#inv_allTabs <- do.call(c, 
+#                       list(inv_allTabs, # NEON download
+#                            list(full_taxon_table = full_taxon_table), # NEON dl
+#                            list(date_of_download = Sys.time()))) # unique id
 #macroinverts_raw <- inv_allTabs
-#library(devtools)
 #use_data(macroinverts_raw, overwrite = TRUE)
 
+#---
+
 ```
+### Load data
 
-### Explore Data
-
-```{r}
+```{r load data}
+inv_allTabs <- macroinverts_raw
 data.frame(tables = labels(inv_allTabs))
 ```
+
+## Explore Data
+The raw data are stored in a list.
+
 ```{r}
 #explore data
 names(inv_allTabs )
@@ -123,24 +154,32 @@ names(inv_allTabs$inv_taxonomyProcessed)
 ```
 
 ### Join Data
+Join the cleaned taxonomy (processed taxonomy) with the field data (sampling data). Make a density variable `den` 
 
-```{r sandbox DELETE, eval=FALSE}
-
+```{r join data, eval=FALSE}
 #merge/join tables: processing macroinverts data to get to density/abundance 
 
-setdiff(inv_allTabs$inv_taxonomyProcessed$sampleID, inv_allTabs$inv_fieldData$sampleID)
+# Check to see if all match
+ifelse(length(setdiff(inv_allTabs$inv_taxonomyProcessed$sampleID, inv_allTabs$inv_fieldData$sampleID))>0,"STOP There is an error","All Good")
 
-inv_dat <- left_join(inv_allTabs$inv_taxonomyProcessed, inv_allTabs$inv_fieldData, 
+# join cleaned taxonomy to sample data
+inv_dat <- left_join(inv_allTabs$inv_taxonomyProcessed, 
+                     inv_allTabs$inv_fieldData, 
                      by = c('sampleID')) %>% 
-  mutate(den = estimatedTotalCount/benthicArea) %>% 
-  mutate(scientificName = forcats::fct_explicit_na(scientificName)) %>%
-  dplyr::filter(sampleCondition == "condition OK")
+  mutate(den = estimatedTotalCount/benthicArea) %>% # make density
+  mutate(scientificName = fct_explicit_na(scientificName)) %>% # explicit missing
+  dplyr::filter(sampleCondition == "condition OK") # toss samples low quality
 
-
-# get rid of duplicate col names and .x suffix after joining table with the same col names
+# remove duplicate col names and .x suffix
 inv_dat <- inv_dat[,!grepl('\\.y',names(inv_dat))]
 names(inv_dat) <- gsub('\\.x','',names(inv_dat))
 
+
+head(inv_dat)
+```
+### Filter for Taxonomy
+Toss all individuals not identified to the genus or lower taxonomic resolution (e.g., all individuals ided as Chironomidae are tossed).
+```{r taxonomic filter}
 # get genus and finer resolution using ordered taxon_rank_list
 inv_dat$taxonRank_ordered <- factor(
   inv_dat$taxonRank,
@@ -149,11 +188,22 @@ inv_dat$taxonRank_ordered <- factor(
 
 # get all records that have rank <= genus, where genus is not NA or blank
 inv_dat_fine <- inv_dat %>%
-  filter(taxonRank_ordered <= 'genus') %>%
-  filter(!is.na(genus), genus != '')
+  filter(taxonRank_ordered <= 'genus') %>% # <= due to ordered factor
+  filter(!is.na(genus), genus != '') # there are missing genera so toss them
 
 # this table has all variables and it's not in a spread format yet
-View(inv_dat_fine)
+head(inv_dat_fine)
+
+
+```
+
+
+
+
+```{r sandbox DELETE, eval=FALSE}
+
+
+
 
 # grouping variables for aggregating density/abundance. Come back here if other vars are need in the final table.
 #for now, it's easier to keep simple like this in order to get one entry per site per row (species per sites summed)
