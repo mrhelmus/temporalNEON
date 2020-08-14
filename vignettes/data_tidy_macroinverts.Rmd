@@ -71,7 +71,7 @@ The manuscript data are stored in \`data/macroinverts_raw.rda` and as a `csv` in
 
 ### Add taxonomy
 Add to the downloaded list of data a table of taxonomy to clean up the data.
-```{r taxon table, eval = FALSE}
+```{r taxon table}
 
 # make ordered taxon_rank_list for a reference (subspecies is smallest rank, kingdom is largest)
 
@@ -111,18 +111,17 @@ taxon_rank_list_ordered <- c('kingdom',
 ```
 
 #### Note
-This code is nor really used but could be useful. It gets a taxon table from the API.
+This code is nor really used but could be useful. It gets a taxon table from the API and do save it in the main list.
 
-
-```{r taxonomy downloadeval=FALSE}
-full _taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
+```{r taxonomy download, eval=FALSE}
+# full _taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
 ```
-### Save Data
+### Load Data
 
 0r
 
-
-```{r save data}
+Save Data
+```{r save data, eval=FALSE}
 #---
 # Uncomment to save a new version of the data
 
@@ -136,31 +135,29 @@ full _taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
 #---
 
 ```
-### Load data
 
+Load data and print it out.
 ```{r load data}
 inv_allTabs <- macroinverts_raw
 data.frame(tables = labels(inv_allTabs))
 ```
 
-## Explore Data
+## Tidy Data
 The raw data are stored in a list.
 
-```{r}
-#explore data
-names(inv_allTabs )
-names(inv_allTabs$inv_taxonomyProcessed)
-
+```{r check loaded list}
+#names(inv_allTabs )
+#names(inv_allTabs$inv_taxonomyProcessed)
+# Check to see if all match
+ifelse(length(setdiff(inv_allTabs$inv_taxonomyProcessed$sampleID, inv_allTabs$inv_fieldData$sampleID))>0,"STOP There is an error","All Good. Forward Ho!")
 ```
 
 ### Join Data
-Join the cleaned taxonomy (processed taxonomy) with the field data (sampling data). Make a density variable `den` 
+Join the cleaned taxonomy (processed taxonomy) with the field data (sampling data). 
 
-```{r join data, eval=FALSE}
+Make a data set with a density variable `den`. This `den` variable is what is being tested for variance and stability. 
+```{r join data, eval=TRUE}
 #merge/join tables: processing macroinverts data to get to density/abundance 
-
-# Check to see if all match
-ifelse(length(setdiff(inv_allTabs$inv_taxonomyProcessed$sampleID, inv_allTabs$inv_fieldData$sampleID))>0,"STOP There is an error","All Good")
 
 # join cleaned taxonomy to sample data
 inv_dat <- left_join(inv_allTabs$inv_taxonomyProcessed, 
@@ -169,15 +166,15 @@ inv_dat <- left_join(inv_allTabs$inv_taxonomyProcessed,
   mutate(den = estimatedTotalCount/benthicArea) %>% # make density
   mutate(scientificName = fct_explicit_na(scientificName)) %>% # explicit missing
   dplyr::filter(sampleCondition == "condition OK") # toss samples low quality
-
+```
+Tidy colnames.
+```{r tidy inv_dat, eval=TRUE}
 # remove duplicate col names and .x suffix
 inv_dat <- inv_dat[,!grepl('\\.y',names(inv_dat))]
 names(inv_dat) <- gsub('\\.x','',names(inv_dat))
-
-
 head(inv_dat)
 ```
-### Filter for Taxonomy
+### Choose Taxonomic scale
 Toss all individuals not identified to the genus or lower taxonomic resolution (e.g., all individuals ided as Chironomidae are tossed).
 ```{r taxonomic filter}
 # get genus and finer resolution using ordered taxon_rank_list
