@@ -174,7 +174,7 @@ inv_dat <- inv_dat[,!grepl('\\.y',names(inv_dat))]
 names(inv_dat) <- gsub('\\.x','',names(inv_dat))
 head(inv_dat)
 ```
-### Choose Taxonomic scale
+### Choose Taxonomic Scale
 Toss all individuals not identified to the genus or lower taxonomic resolution (e.g., all individuals ided as Chironomidae are tossed).
 ```{r taxonomic filter}
 # get genus and finer resolution using ordered taxon_rank_list
@@ -194,22 +194,21 @@ head(inv_dat_fine)
 
 ```
 
+### Choose Spatial Scale
 
-
-
-```{r sandbox DELETE, eval=FALSE}
-
-
-
+```{r spatial scale, eval=TRUE}
 
 # grouping variables for aggregating density/abundance. Come back here if other vars are need in the final table.
 #for now, it's easier to keep simple like this in order to get one entry per site per row (species per sites summed)
 my_grouping_vars <- c('siteID','genus','collectDate')
+```
+### Choose Temporal Scale
 
+```{r temporal scale}
 
 # aggregate densities for each genus group, pull out year and month from collectDate, then
 #excluding collectDate
-inv_dat_aggregate <- inv_dat_fine %>%
+inv_dat_aggregate_tidy <- inv_dat_fine %>%
   select(one_of(my_grouping_vars), den) %>%
   mutate(
     year = collectDate %>% lubridate::year(),
@@ -220,8 +219,21 @@ inv_dat_aggregate <- inv_dat_fine %>%
     abundance = sum(den)) %>% 
   ungroup()
 
+head(inv_dat_aggregate_tidy)
 
-View(inv_dat_aggregate)
+```
+## Write Data
+```{r}
+## Codyn (year and month)
+write.csv(inv_dat_aggregate , file = 
+            'macroinverts_table_abundance_codyn.csv', row.names = F)
+
+```
+
+
+
+
+```{r sandbox DELETE, eval=FALSE}
 
 
 ###put in the formats required for codyn and BAT
