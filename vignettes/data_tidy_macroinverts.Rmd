@@ -9,6 +9,7 @@ vignette: >
 
 ```{r setup, include=FALSE}
 #library(temporalNEON)
+library(devtools)
 library(neonUtilities) 
 library(stringr)
 library(dplyr)
@@ -53,9 +54,8 @@ inv_allTabs <- loadByProduct(dpID = my_dpid,
 #---
 # Uncomment to save a new version of the data
 
-#macroinverts_raw <- inv_allTabs
-#library(devtools)
-#use_data(macroinverts_raw, overwrite = TRUE)
+macroinverts_raw <- inv_allTabs
+use_data(macroinverts_raw, overwrite = TRUE)
 
 #---
 ```
@@ -104,12 +104,6 @@ taxon_rank_list_ordered <- c('kingdom',
 
 # get taxon table from API, may take a few minutes to load
 full_taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
-#---
-# Uncomment to save a new version of the data
-
-#macroinverts_raw <- inv_allTabs
-#library(devtools)
-#use_data(macroinverts_raw, overwrite = TRUE)
 
 ```
 
