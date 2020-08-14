@@ -223,10 +223,10 @@ head(inv_dat_aggregate_tidy)
 
 ```
 ## Write Data
-```{r}
+```{r write tidy data}
 ## Codyn (year and month)
-write.csv(inv_dat_aggregate , file = 
-            'macroinverts_table_abundance_codyn.csv', row.names = F)
+write.csv(inv_dat_aggregate , file = paste,
+            'macroinverts_table_abundance_tidy.csv', row.names = F)
 
 ```
 
@@ -242,7 +242,7 @@ inv_dat_aggregate <- inv_dat_fine %>%
   select(one_of(my_grouping_vars), den) %>%
   group_by_at(vars(my_grouping_vars)) %>%
   summarize(
-    abundance = sum(den)) %>% 
+    abundance = sum(den)) %>% # this is the unit of density analyzed
   ungroup()
 
 View(inv_dat_aggregate)
