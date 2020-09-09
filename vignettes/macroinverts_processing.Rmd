@@ -205,7 +205,6 @@ my_grouping_vars <- c('siteID','genus','collectDate')
 ### Choose Temporal Scale
 
 ```{r temporal scale}
-
 # aggregate densities for each genus group, pull out year and month from collectDate, then
 #excluding collectDate
 inv_dat_aggregate_tidy <- inv_dat_fine %>%
@@ -222,37 +221,26 @@ inv_dat_aggregate_tidy <- inv_dat_fine %>%
 head(inv_dat_aggregate_tidy)
 
 ```
-## Write Data
-```{r write tidy data}
-## Codyn (year and month)
-write.csv(inv_dat_aggregate , file = paste,
-            'macroinverts_table_abundance_tidy.csv', row.names = F)
+## Format Data
+### Codyn
+```{r codyn, eval=TRUE}
 
-```
+###put in the formats required for codyn
 
-
-
-
-```{r sandbox DELETE, eval=FALSE}
-
-
-###put in the formats required for codyn and BAT
-
-inv_dat_aggregate <- inv_dat_fine %>%
+inv_dat_aggregate_codyn <- inv_dat_fine %>%
   select(one_of(my_grouping_vars), den) %>%
   group_by_at(vars(my_grouping_vars)) %>%
   summarize(
     abundance = sum(den)) %>% # this is the unit of density analyzed
   ungroup()
 
-View(inv_dat_aggregate)
+head(inv_dat_aggregate_codyn)
 
+```
 
-## Codyn (year and month)
-write.csv(inv_dat_aggregate , file = 
-            'macroinverts_table_abundance_codyn.csv', row.names = F)
-
-
+### BAT
+#### BAT year
+```{r}
 ##BAT year
 
 agregate_year_BAT <- inv_dat_aggregate%>% 
@@ -261,6 +249,31 @@ agregate_year_BAT <- inv_dat_aggregate%>%
   spread(genus,abund, fill = 0)
 
 View(agregate_year_BAT)
+```
+
+## Write Data
+```{r write tidy data, eval=FALSE}
+## Tidy (year and month)
+write.csv(inv_dat_aggregate_tidy, file = paste,
+            'macroinverts_table_abundance_tidy.csv', row.names = F)
+```
+
+
+```{r write codyn data, eval=FALSE}
+## Codyn (year and month)
+write.csv(inv_dat_aggregate_codyn, file = 
+            'macroinverts_table_abundance_codyn.csv', row.names = F)
+```
+
+```{r sandbox DELETE, eval=FALSE}
+
+write.csv(agregate_year_BAT , file = 
+            'macroinverts_table_abundance_year_BAT.csv', row.names = F)
+```
+
+
+```{r sandbox DELETE, eval=FALSE}
+
 
 write.csv(agregate_year_BAT , file = 
             'macroinverts_table_abundance_year_BAT.csv', row.names = F)
