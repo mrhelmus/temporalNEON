@@ -1,7 +1,6 @@
 ---
 title: "Tidy NEON Macroinvertebrates Data"
 output: rmarkdown::html_vignette
-author: Mariana Perez Rocha (with cosmetic edits by M.R. Helmus)
 vignette: >
   %\VignetteIndexEntry{Tidy NEON Macroinvertebrates Data}
   %\VignetteEngine{knitr::rmarkdown}
@@ -10,13 +9,11 @@ vignette: >
 
 ```{r setup, include=FALSE}
 #library(temporalNEON)
-library(devtools)
 library(neonUtilities) 
 library(stringr)
-library(tidyverse)
+library(dplyr)
 library(lubridate)
 library(here)
-library(forcats)
 devtools::load_all()
 ```
 
@@ -27,8 +24,6 @@ knitr::opts_chunk$set(
 )
 ```
 
-## Get Data
-First we download and derive the data and then later tidy and explore the data.
 
 ### Macroinverts Data Product ID
 ```{r DPID}
@@ -38,7 +33,6 @@ my_dpid <- 'DP1.20120.001'
 ### Choose sites
 All sites had to have > 2 years of sampling data as of 2019.
 
-
 ```{r site choice}
 
 my_site_list <- c('ARIK','BARC','BLWA','CARI','COMO','CRAM','CUPE','GUIL','HOPB',
@@ -47,31 +41,30 @@ my_site_list <- c('ARIK','BARC','BLWA','CARI','COMO','CRAM','CUPE','GUIL','HOPB'
 
 ```
 
-#### Note
-This is how the reproducibility gets wonky. "used data from, `r length(my_site_list)` site."
-
 ### Download Data
-The below code used to download the raw macroinverts files is not run during the package build. Don't ever eval it. 
-
-Rerun this code to update the data.
-
-The manuscript data are stored in \`data/macroinverts_raw.rda` and as a `csv` in  \`data-raw/submitted/`.
-
-```{r down-load, eval=FALSE}
+The below code used to download the raw macroinverts files is not run during the package build. Rerun this code to update the data. The data are stored in `data/macroinverts_raw.rda`. 
+```{r download, eval=FALSE}
 #download NEON data using API
+inv_allTabs <- loadByProduct(dpID = my_dpid, 
+                             site = my_site_list,
+                             package = "expanded", 
+                             nCores = 4, # likely not needed
+                             check.size = FALSE)
+#---
+# Uncomment to save a new version of the data
 
-# uncomment
-#inv_allTabs <- loadByProduct(dpID = my_dpid, 
-#                             site = my_site_list,
-#                             package = "expanded", 
-#                             nCores = 4, # likely not needed
-#                             check.size = FALSE)
+#macroinverts_raw <- inv_allTabs
+#library(devtools)
+#use_data(macroinverts_raw, overwrite = TRUE)
 
+#---
+```
+```{r load data}
+inv_allTabs <- macroinverts_raw
 ```
 
-### Add taxonomy
-Add to the downloaded list of data a table of taxonomy to clean up the data.
-```{r taxon table}
+### Explore taxonomy
+```{r taxon table, eval = FALSE}
 
 # make ordered taxon_rank_list for a reference (subspecies is smallest rank, kingdom is largest)
 
@@ -108,76 +101,49 @@ taxon_rank_list_ordered <- c('kingdom',
                              'speciesGroup',
                              'species',
                              'subspecies') %>% rev()
-```
 
-#### Note
-This code is nor really used but could be useful. It gets a taxon table from the API and do save it in the main list.
-
-```{r taxonomy download, eval=FALSE}
-# full _taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
-```
-### Load Data
-
-0r
-
-Save Data
-```{r save data, eval=FALSE}
+# get taxon table from API, may take a few minutes to load
+full_taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
 #---
 # Uncomment to save a new version of the data
 
-#inv_allTabs <- do.call(c, 
-#                       list(inv_allTabs, # NEON download
-#                            list(full_taxon_table = full_taxon_table), # NEON dl
-#                            list(date_of_download = Sys.time()))) # unique id
 #macroinverts_raw <- inv_allTabs
+#library(devtools)
 #use_data(macroinverts_raw, overwrite = TRUE)
 
-#---
-
 ```
 
-Load data and print it out.
-```{r load data}
-#load_all() should be in the setup header
-inv_allTabs <- macroinverts_raw
+### Explore Data
+
+```{r}
 data.frame(tables = labels(inv_allTabs))
 ```
+```{r}
+#explore data
+names(inv_allTabs )
+names(inv_allTabs$inv_taxonomyProcessed)
 
-## Tidy Data
-The raw data are stored in a list.
-
-```{r check loaded list}
-#names(inv_allTabs )
-#names(inv_allTabs$inv_taxonomyProcessed)
-# Check to see if all match
-ifelse(length(setdiff(inv_allTabs$inv_taxonomyProcessed$sampleID, inv_allTabs$inv_fieldData$sampleID))>0,"STOP There is an error","All Good. Forward!")
 ```
 
 ### Join Data
-Join the cleaned taxonomy (processed taxonomy) with the field data (sampling data). 
 
-Make a data set with a density variable `den`. This `den` variable is what is being tested for variance and stability. 
-```{r join data, eval=TRUE}
+```{r sandbox DELETE, eval=FALSE}
+
 #merge/join tables: processing macroinverts data to get to density/abundance 
 
-# join cleaned taxonomy to sample data
-inv_dat <- left_join(inv_allTabs$inv_taxonomyProcessed, 
-                     inv_allTabs$inv_fieldData, 
+setdiff(inv_allTabs$inv_taxonomyProcessed$sampleID, inv_allTabs$inv_fieldData$sampleID)
+
+inv_dat <- left_join(inv_allTabs$inv_taxonomyProcessed, inv_allTabs$inv_fieldData, 
                      by = c('sampleID')) %>% 
-  mutate(den = estimatedTotalCount/benthicArea) %>% # make density
-  mutate(scientificName = fct_explicit_na(scientificName)) %>% # explicit missing
-  dplyr::filter(sampleCondition == "condition OK") # toss samples low quality
-```
-Tidy colnames.
-```{r tidy inv_dat, eval=TRUE}
-# remove duplicate col names and .x suffix
+  mutate(den = estimatedTotalCount/benthicArea) %>% 
+  mutate(scientificName = forcats::fct_explicit_na(scientificName)) %>%
+  dplyr::filter(sampleCondition == "condition OK")
+
+
+# get rid of duplicate col names and .x suffix after joining table with the same col names
 inv_dat <- inv_dat[,!grepl('\\.y',names(inv_dat))]
 names(inv_dat) <- gsub('\\.x','',names(inv_dat))
-head(inv_dat)
-```
-### Choose Taxonomic Scale
-Toss all individuals not identified to the genus or lower taxonomic resolution (e.g., all individuals ided as Chironomidae are tossed).
-```{r taxonomic filter}
+
 # get genus and finer resolution using ordered taxon_rank_list
 inv_dat$taxonRank_ordered <- factor(
   inv_dat$taxonRank,
@@ -186,29 +152,20 @@ inv_dat$taxonRank_ordered <- factor(
 
 # get all records that have rank <= genus, where genus is not NA or blank
 inv_dat_fine <- inv_dat %>%
-  filter(taxonRank_ordered <= 'genus') %>% # <= due to ordered factor
-  filter(!is.na(genus), genus != '') # there are missing genera so toss them
+  filter(taxonRank_ordered <= 'genus') %>%
+  filter(!is.na(genus), genus != '')
 
 # this table has all variables and it's not in a spread format yet
-head(inv_dat_fine)
-
-
-```
-
-### Choose Spatial Scale
-
-```{r spatial scale, eval=TRUE}
+View(inv_dat_fine)
 
 # grouping variables for aggregating density/abundance. Come back here if other vars are need in the final table.
 #for now, it's easier to keep simple like this in order to get one entry per site per row (species per sites summed)
 my_grouping_vars <- c('siteID','genus','collectDate')
-```
-### Choose Temporal Scale
 
-```{r temporal scale}
+
 # aggregate densities for each genus group, pull out year and month from collectDate, then
 #excluding collectDate
-inv_dat_aggregate_tidy <- inv_dat_fine %>%
+inv_dat_aggregate <- inv_dat_fine %>%
   select(one_of(my_grouping_vars), den) %>%
   mutate(
     year = collectDate %>% lubridate::year(),
@@ -219,61 +176,35 @@ inv_dat_aggregate_tidy <- inv_dat_fine %>%
     abundance = sum(den)) %>% 
   ungroup()
 
-head(inv_dat_aggregate_tidy)
 
-```
-## Format Data
-### Codyn
-```{r codyn, eval=TRUE}
+View(inv_dat_aggregate)
 
-###put in the formats required for codyn
 
-inv_dat_aggregate_codyn <- inv_dat_fine %>%
+###put in the formats required for codyn and BAT
+
+inv_dat_aggregate <- inv_dat_fine %>%
   select(one_of(my_grouping_vars), den) %>%
   group_by_at(vars(my_grouping_vars)) %>%
   summarize(
-    abundance = sum(den)) %>% # this is the unit of density analyzed
+    abundance = sum(den)) %>% 
   ungroup()
 
-head(inv_dat_aggregate_codyn)
+View(inv_dat_aggregate)
 
-```
 
-### BAT
-#### BAT year
-```{r}
+## Codyn (year and month)
+write.csv(inv_dat_aggregate , file = 
+            'macroinverts_table_abundance_codyn.csv', row.names = F)
+
+
 ##BAT year
 
-agregate_year_BAT <- inv_dat_aggregate_tidy %>% 
+agregate_year_BAT <- inv_dat_aggregate%>% 
   group_by(genus,year,siteID) %>%
-  summarise(abund = mean(abundance)) %>%
+  summarise(abund = mean(abundance))%>%
   spread(genus,abund, fill = 0)
 
-#View(agregate_year_BAT)
-```
-
-## Write Data
-```{r write tidy data, eval=FALSE}
-## Tidy (year and month)
-write.csv(inv_dat_aggregate_tidy, file = paste,
-            'macroinverts_table_abundance_tidy.csv', row.names = F)
-```
-
-
-```{r write codyn data, eval=FALSE}
-## Codyn (year and month)
-write.csv(inv_dat_aggregate_codyn, file = file.path(here(), 'data-raw/submitted/macroinverts','macroinverts_table_abundance_codyn.csv'), row.names = F)
-```
-
-```{r sandbox DELETE, eval=FALSE}
-
-write.csv(agregate_year_BAT , file = 
-            'macroinverts_table_abundance_year_BAT.csv', row.names = F)
-```
-
-
-```{r sandbox DELETE, eval=FALSE}
-
+View(agregate_year_BAT)
 
 write.csv(agregate_year_BAT , file = 
             'macroinverts_table_abundance_year_BAT.csv', row.names = F)
