@@ -1,14 +1,25 @@
 ---
 title: "Tidy NEON Macroinvertebrates Data"
 output: rmarkdown::html_vignette
-author: Mariana Perez Rocha (with cosmetic edits by M.R. Helmus)
+author: Mariana Perez Rocha, Matthew R. Helmus
 vignette: >
   %\VignetteIndexEntry{Tidy NEON Macroinvertebrates Data}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
 
-```{r setup, include=FALSE}
+# Aims and Scope
+The aim of this document is to download and tidy data for Temporal NEON WG 14 Project.
+
+## Setup
+
+```{r packages, include=FALSE}
 #library(temporalNEON)
 library(devtools)
 library(neonUtilities) 
@@ -17,15 +28,22 @@ library(tidyverse)
 library(lubridate)
 library(here)
 library(forcats)
-devtools::load_all()
+#devtools::load_all()
 ```
 
-```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
+### Switches
+
+Decide 
+1.  Get new download of the data
+1.  Write data to csv in `data-raw` 
+
+```{r switches}
+
+wrtdata <- TRUE
+dldata <- FALSE
+
 ```
+
 
 ## Get Data
 First we download and derive the data and then later tidy and explore the data.
@@ -38,35 +56,33 @@ my_dpid <- 'DP1.20120.001'
 ### Choose sites
 All sites had to have > 2 years of sampling data as of 2019.
 
-
 ```{r site choice}
 
 my_site_list <- c('ARIK','BARC','BLWA','CARI','COMO','CRAM','CUPE','GUIL','HOPB',
                   'KING','LECO','LEWI','MAYF','OKSR','POSE','PRIN','PRLA','PRPO',
                   'REDB','SUGG','TOMB','TOOK','WALK')
-
 ```
 
 #### Note
 This is how the reproducibility gets wonky. "used data from, `r length(my_site_list)` site."
 
 ### Download Data
-The below code used to download the raw macroinverts files is not run during the package build. Don't ever eval it. 
+The below code used to download the raw macroinverts files is not run during the package build. Don't set `eval = TRUE` for a quick render! 
+
+The manuscript data are stored in \`data/macroinverts_raw.rda` and as a `csv` in  \`data-raw/macroinvertebrates/submitted/`.
 
 Rerun this code to update the data.
-
-The manuscript data are stored in \`data/macroinverts_raw.rda` and as a `csv` in  \`data-raw/submitted/`.
 
 ```{r down-load, eval=FALSE}
 #download NEON data using API
 
-# uncomment
+if(dldata){ # UNCOMMENT THIS IF YOU WANT TO DOWNLOAD!
 #inv_allTabs <- loadByProduct(dpID = my_dpid, 
 #                             site = my_site_list,
 #                             package = "expanded", 
 #                             nCores = 4, # likely not needed
 #                             check.size = FALSE)
-
+}
 ```
 
 ### Add taxonomy
@@ -74,7 +90,6 @@ Add to the downloaded list of data a table of taxonomy to clean up the data.
 ```{r taxon table}
 
 # make ordered taxon_rank_list for a reference (subspecies is smallest rank, kingdom is largest)
-
 
 taxon_rank_list_ordered <- c('kingdom', 
                              'subkingdom',
@@ -117,10 +132,9 @@ This code is nor really used but could be useful. It gets a taxon table from the
 # full _taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
 ```
 ### Load Data
+If you rerun the script to scrape the NEON data, then be sure to save that new version of the data! Uncomment the code below
 
-0r
-
-Save Data
+#### Save New Data!
 ```{r save data, eval=FALSE}
 #---
 # Uncomment to save a new version of the data
@@ -136,7 +150,8 @@ Save Data
 
 ```
 
-Load data and print it out.
+#### Load data
+If you did not download a new version of the data, then here, load the data. Note the the raw csv tables are in `data-raw`
 ```{r load data}
 #load_all() should be in the setup header
 inv_allTabs <- macroinverts_raw
@@ -150,13 +165,14 @@ The raw data are stored in a list.
 #names(inv_allTabs )
 #names(inv_allTabs$inv_taxonomyProcessed)
 # Check to see if all match
-ifelse(length(setdiff(inv_allTabs$inv_taxonomyProcessed$sampleID, inv_allTabs$inv_fieldData$sampleID))>0,"STOP There is an error","All Good. Forward!")
+ifelse(length(setdiff(inv_allTabs$inv_taxonomyProcessed$sampleID, inv_allTabs$inv_fieldData$sampleID))>0,"STOP There is an error","All Good!")
 ```
 
 ### Join Data
 Join the cleaned taxonomy (processed taxonomy) with the field data (sampling data). 
 
 Make a data set with a density variable `den`. This `den` variable is what is being tested for variance and stability. 
+
 ```{r join data, eval=TRUE}
 #merge/join tables: processing macroinverts data to get to density/abundance 
 
@@ -168,7 +184,8 @@ inv_dat <- left_join(inv_allTabs$inv_taxonomyProcessed,
   mutate(scientificName = fct_explicit_na(scientificName)) %>% # explicit missing
   dplyr::filter(sampleCondition == "condition OK") # toss samples low quality
 ```
-Tidy colnames.
+
+### Tidy colnames.
 ```{r tidy inv_dat, eval=TRUE}
 # remove duplicate col names and .x suffix
 inv_dat <- inv_dat[,!grepl('\\.y',names(inv_dat))]
@@ -176,7 +193,7 @@ names(inv_dat) <- gsub('\\.x','',names(inv_dat))
 head(inv_dat)
 ```
 ### Choose Taxonomic Scale
-Toss all individuals not identified to the genus or lower taxonomic resolution (e.g., all individuals ided as Chironomidae are tossed).
+Toss all individuals not identified to the genus or lower taxonomic resolution (e.g., all individuals id-ed as Chironomidae are tossed).
 ```{r taxonomic filter}
 # get genus and finer resolution using ordered taxon_rank_list
 inv_dat$taxonRank_ordered <- factor(
@@ -196,20 +213,39 @@ head(inv_dat_fine)
 ```
 
 ### Choose Spatial Scale
+Analyses are run at a specific unit of spatial scale and that scale is the site (`siteID`).
 
 ```{r spatial scale, eval=TRUE}
 
 # grouping variables for aggregating density/abundance. Come back here if other vars are need in the final table.
 #for now, it's easier to keep simple like this in order to get one entry per site per row (species per sites summed)
-my_grouping_vars <- c('siteID','genus','collectDate')
+my_grouping_vars <- c('siteID','genus','collectDate') #see next code chunk
 ```
+
+#### Get table of GPS points
+```{r GPS locations}
+
+# getting table of location into a data.frame (lat, long, elevation)
+table_location <- inv_allTabs$inv_fieldData %>%
+  select(namedLocation, decimalLatitude, decimalLongitude, elevation) %>%
+  distinct() %>%
+  rename(
+    location_id = namedLocation,
+    latitude = decimalLatitude,
+    longitude = decimalLongitude
+    ) 
+
+```
+
+
 ### Choose Temporal Scale
+Analyses are run at a specific unit of rime and that scale is the year and month (bout).
 
 ```{r temporal scale}
 # aggregate densities for each genus group, pull out year and month from collectDate, then
 #excluding collectDate
 inv_dat_aggregate_tidy <- inv_dat_fine %>%
-  select(one_of(my_grouping_vars), den) %>%
+  select(one_of(my_grouping_vars), den) %>% # spatial scale is here
   mutate(
     year = collectDate %>% lubridate::year(),
     month = collectDate %>% lubridate::month()
@@ -222,7 +258,9 @@ inv_dat_aggregate_tidy <- inv_dat_fine %>%
 head(inv_dat_aggregate_tidy)
 
 ```
-## Format Data
+## Wrangle Data
+Make the data in formats required for CODYN and BAT temopral analyses
+
 ### Codyn
 ```{r codyn, eval=TRUE}
 
@@ -241,7 +279,7 @@ head(inv_dat_aggregate_codyn)
 
 ### BAT
 #### BAT year
-```{r}
+```{r format BAT year}
 ##BAT year
 
 agregate_year_BAT <- inv_dat_aggregate_tidy %>% 
@@ -249,65 +287,82 @@ agregate_year_BAT <- inv_dat_aggregate_tidy %>%
   summarise(abund = mean(abundance)) %>%
   spread(genus,abund, fill = 0)
 
-#View(agregate_year_BAT)
+head(agregate_year_BAT)
 ```
-
-## Write Data
-```{r write tidy data, eval=FALSE}
-## Tidy (year and month)
-write.csv(inv_dat_aggregate_tidy, file = paste,
-            'macroinverts_table_abundance_tidy.csv', row.names = F)
-```
-
-
-```{r write codyn data, eval=FALSE}
-## Codyn (year and month)
-write.csv(inv_dat_aggregate_codyn, file = file.path(here(), 'data-raw/submitted/macroinverts','macroinverts_table_abundance_codyn.csv'), row.names = F)
-```
-
-```{r sandbox DELETE, eval=FALSE}
-
-write.csv(agregate_year_BAT , file = 
-            'macroinverts_table_abundance_year_BAT.csv', row.names = F)
-```
-
-
-```{r sandbox DELETE, eval=FALSE}
-
-
-write.csv(agregate_year_BAT , file = 
-            'macroinverts_table_abundance_year_BAT.csv', row.names = F)
-
-
-## BAT month
-
+#### BAT bout (month)
+```{r format BAT month}
 # make wide first, filling with abundance, making the 'bout' (format year+month) to be used in BAT
-inv_dat_wide <- inv_dat_aggregate %>%
+
+inv_dat_wide <- inv_dat_aggregate_tidy %>%
   tidyr::spread(genus, abundance, fill = 0)%>% 
   unite(bout,'year':'month', na.rm = TRUE, remove = FALSE)%>%
   dplyr::select(-collectDate)
 
 
-View(inv_dat_wide)
+head(inv_dat_wide)
 
-write.csv(inv_dat_wide, file = 
-            'macroinverts_table_abundance_month_BAT.csv', row.names = F)
 ```
-```{r UNK eval = FALSE}
 
-# getting table of location into a data.frame (lat, long, elevation)
-table_location <- inv_allTabs$inv_fieldData %>%
-  select(namedLocation, decimalLatitude, decimalLongitude, elevation) %>%
-  distinct() %>%
-  rename(
-    location_id = namedLocation,
-    latitude = decimalLatitude,
-    longitude = decimalLongitude
-    ) 
 
-write.csv(table_location, file = 
+## Write Data
+
+### Tidy Data Write
+
+Writes the tidy data output
+```{r write tidy data, eval=TRUE}
+drpath <- 'data-raw/submitted/macroinverts'
+
+## Tidy (year and month)
+if(wrtdata){
+write.csv(inv_dat_aggregate_tidy, 
+          file = file.path(here(), drpath, 'macroinverts_table_abundance_tidy.csv'),
+          row.names = F)
+}
+```
+
+### CODYN Data Write
+Writes the CODYN data output
+
+```{r write CODYN data, eval=TRUE}
+## Codyn (year and month)
+if(wrtdata){
+write.csv(inv_dat_aggregate_codyn, 
+          file = file.path(here(), drpath, 'macroinverts_table_abundance_codyn.csv'),
+          row.names = F)
+}
+```
+
+### BAT Year Data
+Writes the BAT Year data output
+
+```{r write BAT year data, eval=TRUE}
+
+## BAT (year)
+if(wrtdata){
+
+write.csv(agregate_year_BAT,
+          file = file.path(here(),drpath, 'macroinverts_table_abundance_year_BAT.csv'), 
+          row.names = F)
+}
+```
+
+### BAT Month (bout) Write
+```{r write BAT month, eval=TRUE}
+
+## BAT month
+if(wrtdata){
+  write.csv(inv_dat_wide, file = 
+            'macroinverts_table_abundance_bout_BAT.csv', row.names = F)
+}
+```
+
+### GPS Locations Write
+```{r write GPS locations, eval = TRUE}
+
+if(wrtdata){
+  write.csv(table_location, file = 
             'all_inverts_table_location.csv', row.names = F)
-
+}
 
 ```
 
