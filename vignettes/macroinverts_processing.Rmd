@@ -76,12 +76,12 @@ Rerun this code to update the data.
 ```{r down-load, eval=FALSE}
 #download NEON data using API
 
-if(dldata){ # UNCOMMENT THIS IF YOU WANT TO DOWNLOAD!
-#inv_allTabs <- loadByProduct(dpID = my_dpid, 
-#                             site = my_site_list,
-#                             package = "expanded", 
-#                             nCores = 4, # likely not needed
-#                             check.size = FALSE)
+if(dldata){ 
+inv_allTabs <- loadByProduct(dpID = my_dpid, 
+                             site = my_site_list,
+                             package = "expanded", 
+                             nCores = 4, # likely not needed
+                             check.size = FALSE)
 }
 ```
 
@@ -129,7 +129,7 @@ taxon_rank_list_ordered <- c('kingdom',
 This code is nor really used but could be useful. It gets a taxon table from the API and do save it in the main list.
 
 ```{r taxonomy download, eval=FALSE}
-# full _taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
+ full_taxon_table <- neonUtilities::getTaxonTable('MACROINVERTEBRATE')
 ```
 ### Load Data
 If you rerun the script to scrape the NEON data, then be sure to save that new version of the data! Uncomment the code below
@@ -139,12 +139,12 @@ If you rerun the script to scrape the NEON data, then be sure to save that new v
 #---
 # Uncomment to save a new version of the data
 
-#inv_allTabs <- do.call(c, 
-#                       list(inv_allTabs, # NEON download
-#                            list(full_taxon_table = full_taxon_table), # NEON dl
-#                            list(date_of_download = Sys.time()))) # unique id
-#macroinverts_raw <- inv_allTabs
-#use_data(macroinverts_raw, overwrite = TRUE)
+inv_allTabs <- do.call(c, 
+                       list(inv_allTabs, # NEON download
+                            list(full_taxon_table = full_taxon_table), # NEON dl
+                            list(date_of_download = Sys.time()))) # unique id
+macroinverts_raw <- inv_allTabs
+use_data(macroinverts_raw, overwrite = TRUE)
 
 #---
 
@@ -352,7 +352,8 @@ write.csv(agregate_year_BAT,
 ## BAT month
 if(wrtdata){
   write.csv(inv_dat_wide, file = 
-            'macroinverts_table_abundance_bout_BAT.csv', row.names = F)
+            file.path(here(),drpath, 'macroinverts_table_abundance_bout_BAT.csv'), 
+            row.names = F)
 }
 ```
 
@@ -361,7 +362,7 @@ if(wrtdata){
 
 if(wrtdata){
   write.csv(table_location, file = 
-            'all_inverts_table_location.csv', row.names = F)
+            file.path(here(),drpath, 'all_inverts_table_location.csv'), row.names = F)
 }
 
 ```
