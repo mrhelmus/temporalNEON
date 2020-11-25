@@ -16,8 +16,6 @@
 "BARC.AOS.riparian.point.08",29.675584,-82.010729,25.1
 "BARC.AOS.riparian.point.04",29.675164,-82.006743,22.5
 "BARC.AOS.riparian.point.02",29.677034,-82.006975,26.1
-<<<<<<< Updated upstream:data-raw/submitted/macroinverts/all_inverts_table_location.csv
-=======
 "FLNT.AOS.riparian.point.06",31.188701,-84.433661,34
 "FLNT.AOS.riparian.point.04",31.187345,-84.436243,42.2
 "FLNT.AOS.riparian.point.02",31.184072,-84.439567,36.9
@@ -30,7 +28,6 @@
 "FLNT.AOS.riparian.point.05",31.18921,-84.434636,38
 "FLNT.AOS.riparian.point.03",31.185744,-84.437733,33.9
 "FLNT.AOS.riparian.point.01",31.182647,-84.44158,33.7
->>>>>>> Stashed changes:vignettes/all_inverts_table_location.csv
 "SUGG.AOS.riparian.point.09",29.686477,-82.014568,27.9
 "SUGG.AOS.outlet",29.687601,-82.020598,30.3
 "SUGG.AOS.riparian.point.03",29.69038,-82.019605,27.9
@@ -60,8 +57,6 @@
 "CRAM.AOS.riparian.point.07",46.207433,-89.47522,514.4
 "CRAM.AOS.riparian.point.01",46.211208,-89.478274,511
 "CRAM.AOS.riparian.point.09",46.206543,-89.476401,510.5
-<<<<<<< Updated upstream:data-raw/submitted/macroinverts/all_inverts_table_location.csv
-=======
 "CRAM.AOS.inlet",46.207952,-89.476193,512.5
 "CRAM.AOS.outlet",46.211995,-89.47446,512.5
 "LIRO.AOS.buoy.c0",45.998322,-89.704766,502
@@ -79,7 +74,6 @@
 "LIRO.AOS.riparian.point.09",45.997072,-89.705716,500.2
 "LIRO.AOS.inlet",45.995205,-89.706502,496.5
 "LIRO.AOS.outlet",46.000609,-89.704078,495.9
->>>>>>> Stashed changes:vignettes/all_inverts_table_location.csv
 "KING.AOS.reach",39.105061,-96.603829,324.4
 "MCDI.AOS.reach",38.945861,-96.443022,396
 "LECO.AOS.reach",35.690428,-83.50379,579
@@ -112,19 +106,11 @@
 "PRLA.AOS.buoy.c0",47.159718,-99.118723,561
 "PRLA.AOS.riparian.point.01",47.16041,-99.120862,564.2
 "PRLA.AOS.inlet",47.159093,-99.114228,562.4
-<<<<<<< Updated upstream:data-raw/submitted/macroinverts/all_inverts_table_location.csv
-"PRLA.AOS.riparian.point.03",47.161713,-99.115755,564.4
-"PRLA.AOS.outlet",47.16085,-99.120215,562.3
-"PRLA.AOS.riparian.point.09",47.158039,-99.119199,564.7
-"PRLA.AOS.riparian.point.07",47.158533,-99.114713,564.6
-"PRLA.AOS.riparian.point.05",47.161979,-99.113416,564.3
-=======
 "PRLA.AOS.riparian.point.05",47.161979,-99.113416,564.3
 "PRLA.AOS.outlet",47.16085,-99.120215,562.3
 "PRLA.AOS.riparian.point.09",47.158039,-99.119199,564.7
 "PRLA.AOS.riparian.point.07",47.158533,-99.114713,564.6
 "PRLA.AOS.riparian.point.03",47.161713,-99.115755,564.4
->>>>>>> Stashed changes:vignettes/all_inverts_table_location.csv
 "PRLA.AOS.riparian.point.08",47.157105,-99.116611,564.1
 "PRLA.AOS.riparian.point.04",47.162789,-99.11502,564.1
 "PRLA.AOS.riparian.point.02",47.161496,-99.118068,564.5
@@ -133,10 +119,6 @@
 "PRLA.AOS.reach",47.159476,-99.118832,565
 "PRLA.AOS.riparian.point.11",47.157178,-99.123745,563.9
 "PRLA.AOS.riparian.point.12",47.159164,-99.124312,563.8
-<<<<<<< Updated upstream:data-raw/submitted/macroinverts/all_inverts_table_location.csv
-"PRPO.AOS.riparian.point.03",47.128397,-99.252532,590.5
-=======
->>>>>>> Stashed changes:vignettes/all_inverts_table_location.csv
 "PRPO.AOS.inlet",47.129671,-99.254694,591.7
 "PRPO.AOS.riparian.point.07",47.130142,-99.254748,590.9
 "PRPO.AOS.riparian.point.03",47.128397,-99.252532,590.5
